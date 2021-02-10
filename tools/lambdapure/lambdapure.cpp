@@ -58,6 +58,18 @@ int main(int argc, char **argv) {
   registry.insert<::mlir::lambdapure::LambdapureDialect>();
 
   mlir::registerAllPasses();
+  ::mlir::registerPass("lambdapure-des-upd", "Lambdapure Destructive Update Pattern",
+                       []() -> std::unique_ptr<::mlir::Pass> {
+                         return mlir::lambdapure::createDestructiveUpdatePattern();
+                       });
+  ::mlir::registerPass("lambdapure-ref-rewrite", "Lamdbapure Reference Rewriter Pattern",
+                       []() -> std::unique_ptr<::mlir::Pass> {
+                         return mlir::lambdapure::createReferenceRewriterPattern();
+                       });
+  ::mlir::registerPass("convert-lambdapure-to-lean", "Lambdapure to Lean Lowering",
+                       []() -> std::unique_ptr<::mlir::Pass> {
+                         return mlir::lambdapure::createLambdapureToLeanLowering();
+                       });
 
   return failed(
     mlir::MlirOptMain(argc, argv, "Quantum dialect driver\n", registry));
