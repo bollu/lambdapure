@@ -1,13 +1,13 @@
 #ifndef LAMBDAPURE_AST_H_
 #define LAMBDAPURE_AST_H_
-#include <map>
-#include <utility>
-#include <vector>
-#include <memory>
-#include <iostream>
+#include "lambdapure/Lexer.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
-#include "lambdapure/lexer.h"
+#include <iostream>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
 // #include "llvm/Support/Casting.h"
 
 namespace lambdapure{

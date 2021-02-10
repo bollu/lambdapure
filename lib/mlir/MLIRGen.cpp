@@ -5,10 +5,7 @@
 #include "lambdapure/Scope.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/Function.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Module.h"
-#include "mlir/IR/StandardTypes.h"
 #include "mlir/IR/Verifier.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -178,7 +175,7 @@ mlir::LogicalResult mlirGen(CaseStmtAST &casestmt){
   mlir::Value curr_val = scopeTable.lookup(var);
   auto bodies = casestmt.getBodies();
   mlir::Type t  = curr_val.getType();
-  if(mlir::lambdapure::ObjectType::kindof(t.getKind())){
+  if(t.isa<ObjectType>()){
     curr_val = builder.create<TagGetOp>(loc(), builder.getIntegerType(8),curr_val);
   }
   auto caseOp = builder.create<CaseOp>(loc(),curr_val,bodies.size());

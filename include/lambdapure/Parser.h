@@ -13,7 +13,7 @@
 #include <memory>
 #include <iostream>
 
-#include "Ast.h"
+#include "AST.h"
 #include "Lexer.h"
 
 namespace lambdapure{
