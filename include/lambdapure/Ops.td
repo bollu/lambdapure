@@ -1,6 +1,7 @@
 #ifndef LAMBDAPURE_OPS
 #define LAMBDAPURE_OPS
 include "mlir/IR/OpBase.td"
+include "mlir/IR/BuiltinTypes.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 def Lambdapure_Dialect  : Dialect {
@@ -25,11 +26,9 @@ def IntegerConstOp : Lambdapure_OP<"IntegerConst", [NoSideEffect]>{
   let arguments = (ins I64Attr:$value);
   let results = (outs lambdapure_ObjectType);
 
-
   let builders = [
-    OpBuilder<"OpBuilder &builder, OperationState &state, int value">,
+    OpBuilderDAG<(ins "int":$value)>
   ];
-
 }
 
 
@@ -42,9 +41,8 @@ def AppOp : Lambdapure_OP<"AppOp",[]>{
   let arguments = (ins AnyType:$callee, Variadic<AnyType>:$operands);
   let results = (outs AnyType);
   let builders = [
-    OpBuilder<"OpBuilder &builder, OperationState &state, Value func, ArrayRef<Value> args, Type ty">
+    OpBuilderDAG<(ins "::mlir::Value":$func, "llvm::ArrayRef<::mlir::Value>":$args, "::mlir::Type":$ty)>
   ];
-
 }
 
 def PapOp : Lambdapure_OP<"PapOp",[]>{
@@ -52,7 +50,7 @@ def PapOp : Lambdapure_OP<"PapOp",[]>{
   let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<lambdapure_ObjectType>:$operands);
   let results = (outs lambdapure_ObjectType);
   let builders = [
-    OpBuilder<"OpBuilder &builder, OperationState &state, StringRef callee, ArrayRef<Value> args">
+    OpBuilderDAG<(ins "StringRef":$callee, "ArrayRef<::mlir::Value>":$args)>
   ];
 }
 
@@ -65,7 +63,7 @@ def CallOp : Lambdapure_OP<"CallOp",[]>{
   let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyType>:$inputs);
   let results = (outs AnyType);
   let builders = [
-    OpBuilder<"OpBuilder &builder, OperationState &state, StringRef callee, ArrayRef<Value> args,Type ty">
+    OpBuilderDAG<(ins "StringRef":$callee, "ArrayRef<::mlir::Value>":$args, "::mlir::Type":$ty)>
   ];
 }
 def ReturnOp : Lambdapure_OP<"ReturnOp",[NoSideEffect,Terminator]>{
@@ -74,8 +72,6 @@ def ReturnOp : Lambdapure_OP<"ReturnOp",[NoSideEffect,Terminator]>{
       ReturnOp returns strictly one or none variable
     }];
   let arguments = (ins AnyType:$input);
-
-
 }
 
 def ConstructorOp : Lambdapure_OP<"ConstructorOp",[]>{
@@ -86,7 +82,7 @@ def ConstructorOp : Lambdapure_OP<"ConstructorOp",[]>{
   let arguments = (ins I64Attr:$tag, Variadic<lambdapure_ObjectType>:$operands);
   let results = (outs lambdapure_ObjectType);
   let builders = [
-    OpBuilder<"OpBuilder &builder,OperationState &state,int tag, ArrayRef<Value> operands, mlir::Type ty">
+    OpBuilderDAG<(ins "int":$tag, "ArrayRef<::mlir::Value>":$operands, "::mlir::Type":$ty)>
   ];
 }
 
@@ -99,7 +95,7 @@ def ReuseConstructorOp : Lambdapure_OP<"ReuseConstructorOp",[]>{
   let arguments = (ins I64Attr:$tag,Variadic<lambdapure_ObjectType>:$operands);
   let results = (outs lambdapure_ObjectType);
   let builders = [
-    OpBuilder<"OpBuilder &builder,OperationState &state,int tag, ArrayRef<Value> operands">
+    OpBuilderDAG<(ins "int":$tag, "ArrayRef<::mlir::Value>":$operands)>
   ];
 }
 
@@ -111,7 +107,7 @@ def ProjectionOp : Lambdapure_OP<"ProjectionOp", [NoSideEffect]>{
   let arguments = (ins I64Attr:$index,lambdapure_ObjectType:$operand);
   let results = (outs lambdapure_ObjectType);
   let builders = [
-    OpBuilder<"OpBuilder &builder,OperationState &state,int index, mlir::Value operand, mlir::Type ty">
+    OpBuilderDAG<(ins "int":$index, "::mlir::Value":$operand, "::mlir::Type":$ty)>
   ];
 }
 
@@ -119,7 +115,6 @@ def CaseOp : Lambdapure_OP<"CaseOp", [NoSideEffect,Terminator]>{
   let summary = "Case operation mapping to regions";
   let arguments = (ins I8:$operand);
   let regions = (region VariadicRegion<AnyRegion>:$region);
-
 }
 
 def ResetOp : Lambdapure_OP<"ResetOp",[NoSideEffect,Terminator]>{

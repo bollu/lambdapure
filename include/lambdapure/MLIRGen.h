@@ -1,7 +1,6 @@
 #ifndef LAMBDAPURE_GEN
 #define LAMBDAPURE_GEN
 #include <memory>
-#include "mlir/IR/Module.h"
 
 namespace mlir {
 class MLIRContext;

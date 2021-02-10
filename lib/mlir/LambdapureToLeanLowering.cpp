@@ -86,7 +86,7 @@ void LambdapureToLeanLoweringPass::runOnOperation(){
   patterns.insert<IntegerConstOpLowering,ConstructorOpLowering,ReuseConstructorOpLowering>(&getContext());
 
   auto module = getOperation();
-  if(failed(applyPartialConversion(module,target,patterns))){
+  if(failed(applyPartialConversion(module,target,std::move(patterns)))){
     signalPassFailure();
   }
 }

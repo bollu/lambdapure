@@ -9,15 +9,11 @@
 #include "lambdapure/Scope.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/Function.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Module.h"
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Block.h"
 #include "mlir/IR/Value.h"
-#include "mlir/IR/Function.h"
 #include "mlir/IR/Operation.h"
-#include "mlir/IR/StandardTypes.h"
 #include "mlir/IR/Verifier.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -42,7 +38,7 @@ namespace{
     std::ofstream outFile;
     CppVarTable varTable;
     std::string typeConverter(mlir::Type t){
-      if(mlir::lambdapure::ObjectType::kindof(t.getKind())){
+      if(t.isa<::mlir::lambdapure::ObjectType>()){
         return "lean_object* ";
       }else if(t.isIntOrIndex()){
         return "int ";
