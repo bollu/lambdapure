@@ -39,10 +39,10 @@ enum Token : int{
 class Lexer {
 private:
   //buffer
+  Location lastLocation;
   llvm::StringRef buffer;
   int bufferIndex = 0;
   //Location
-  Location lastLocation;
   int curLine = 1;
   int curCol = 1;
 
@@ -54,23 +54,22 @@ private:
 
   int getNextChar(){
 
-    if(bufferIndex >= buffer.size()){
+    if(bufferIndex >= (int)buffer.size()){
       return EOF;
     }
     else{
       curCol++;
       int res = buffer.begin()[bufferIndex];
-      if(res == '\n'){
+      if(res == '\n') {
         curCol = 1;
         curLine++;
       }
       bufferIndex++;
       return res;
     }
-
   }
 
-  Token getTok(){
+  Token getTok() {
     while (isspace(lastChar)){
       lastChar = Token(getNextChar());
     }
@@ -113,7 +112,6 @@ private:
       return tok_id;
     }
 
-
     if (isdigit(lastChar)) { // Number(no floats): [0-9]*
       std::string NumStr;
       do {
@@ -124,12 +122,9 @@ private:
       return tok_lit;
    }
 
-
-
-
-
-   if (lastChar == EOF)
+   if (lastChar == EOF) {
      return tok_eof;
+   }
    //ending case: return characters in single token(ascii)
    Token ThisChar = Token(lastChar);
    lastChar = Token(getNextChar());

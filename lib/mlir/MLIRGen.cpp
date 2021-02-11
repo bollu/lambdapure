@@ -139,8 +139,8 @@ private:
     }
     //
     builder.setInsertionPointToStart(&entryBlock);
-    auto region = function.getCallableRegion();
-    auto fbody = mlirGen(*functionAST.getFBody());
+    // auto region = function.getCallableRegion();
+    mlirGen(*functionAST.getFBody());
 
 
 

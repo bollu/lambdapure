@@ -28,7 +28,7 @@
         int argNum = arg.getArgNumber();
         return "arg" + std::to_string(argNum);
       }else{
-        for(int i = 0; i < vals.size();++i){
+        for(int i = 0; i < (int)vals.size();++i){
           if(vals.at(i) == val){
             std::string res = strings_vector.at(i);
             return res;

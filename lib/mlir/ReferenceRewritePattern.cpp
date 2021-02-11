@@ -22,7 +22,7 @@ public:
     std::vector<mlir::Value> args;
     std::vector<int> consumes;
 
-    for(int i = 0; i <f.getNumArguments();++i ){
+    for(int i = 0; i < (int)f.getNumArguments();++i ){
       args.push_back(f.getArgument(i));
       consumes.push_back(-1);//assume ownerships => starts with -1
     }
@@ -34,32 +34,32 @@ public:
 
   void runOnRegion(std::vector<mlir::Value> args,std::vector<int> consumes,mlir::Region &region){
     for(auto it = region.op_begin(); it != region.op_end();++it ){
-      auto context = it -> getContext();
+      auto context = it->getContext();
       auto builder = mlir::OpBuilder(context);
 
       //We start with args consume at -1
       //check for return,ReuseConstructorOp, Constructor, call, application,partial application
 
-      auto name = it -> getName().getStringRef().str();
+      auto name = it->getName().getStringRef().str();
 
       if(name == "lambdapure.ReturnOp"){
-        mlir::Value val = it -> getOperand(0);
+        mlir::Value val = it->getOperand(0);
         onValue(&*it,args,consumes,val,builder);
         addAllDecs(&*it,args,consumes,builder);
       }
       else if (name == "lambdapure.ReuseConstructorOp"){
 
         //change the value of in args to the new value
-        for(int i = 0; i < args.size();++i){
-          if(args[i] == it -> getOperand(0)){
-            args[i] = it -> getOpResult(0);
+        for(int i = 0; i < (int)args.size();++i){
+          if(args[i] == it->getOperand(0)){
+            args[i] = it->getOpResult(0);
           }
         }
       }
       else if (name == "lambdapure.ConstructorOp"){
-        args.push_back(it -> getOpResult(0));
-        for(int i = 0; i < it -> getNumOperands(); ++i){
-          onValue(&*it,args,consumes, it -> getOperand(i),builder);
+        args.push_back(it->getOpResult(0));
+        for(int i = 0; i < (int)it->getNumOperands(); ++i){
+          onValue(&*it,args,consumes, it->getOperand(i),builder);
         }
       }
       else if (
@@ -67,26 +67,26 @@ public:
                name == "lambdapure.AppOp"         ||
                name == "lambdapure.PapOp")
       {
-        for(int i = 0; i < it -> getNumOperands(); ++i){
-          onValue(&*it,args,consumes, it -> getOperand(i),builder);
+        for(int i = 0; i < (int)it->getNumOperands(); ++i){
+          onValue(&*it,args,consumes, it->getOperand(i),builder);
         }
       }
       else if(name == "lambdapure.CaseOp"){
-            for(int i = 0 ; i < it ->getNumRegions();++i){
+            for(int i = 0; i < (int)it->getNumRegions();++i){
               std::vector<mlir::Value> new_args(args);
               std::vector<int> new_consumes(consumes);
-              auto &region = it -> getRegion(i);
+              auto &region = it->getRegion(i);
               runOnRegion(new_args,new_consumes,region);
             }
 
       }
       else if(name == "lambdapure.ResetOp"){
-        for(int i = 0 ; i < it ->getNumRegions();++i){
+        for(int i = 0 ; i < (int)it ->getNumRegions();++i){
           std::vector<mlir::Value> new_args(args);
           std::vector<int> new_consumes(consumes);
-          auto &region = it -> getRegion(i);
+          auto &region = it->getRegion(i);
           if(i == 0){
-            runOnResetRegion(it -> getOperand(0),new_args,new_consumes,region);
+            runOnResetRegion(it->getOperand(0),new_args,new_consumes,region);
           }else{
             runOnRegion(new_args,new_consumes,region);
           }
@@ -98,9 +98,9 @@ public:
 
   void runOnResetRegion(mlir::Value resetValue, std::vector<mlir::Value> args,std::vector<int> consumes,mlir::Region &region){
     for(auto it = region.op_begin(); it != region.op_end();++it ){
-      auto name = it -> getName().getStringRef().str();
-      if(name == "lambdapure.ProjectionOp" && it -> getOperand(0) == resetValue){
-        args.push_back(it -> getOpResult(0));
+      auto name = it->getName().getStringRef().str();
+      if(name == "lambdapure.ProjectionOp" && it->getOperand(0) == resetValue){
+        args.push_back(it->getOpResult(0));
         consumes.push_back(-1);
       }
     }
@@ -124,16 +124,17 @@ public:
   }
 
   int consume(std::vector<mlir::Value> &args, std::vector<int> &consumes,mlir::Value val){
-    for(int i = 0; i < args.size(); ++i){
+    for(int i = 0; i < (int)args.size(); ++i){
       if(args[i] == val){
         consumes[i]++;
         return consumes[i];
       }
     }
+    assert(false && "should not reach here.");
   }
   void addAllDecs(Operation *op, std::vector<mlir::Value> &args,std::vector<int> &consumes,mlir::OpBuilder &builder){
     builder.setInsertionPoint(op);
-    for(int i = 0;i < args.size(); ++i){
+    for(int i = 0;i < (int)args.size(); ++i){
       if(consumes[i] ==  -1){
         builder.create<lambdapure::DecOp>(builder.getUnknownLoc(),args[i]);
       }

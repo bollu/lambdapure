@@ -156,9 +156,9 @@ namespace{
     void translateCaseOp(Operation *op){
       std::string o1 = varTable.get(op -> getOperand(0));
       outFile << "switch(" << o1 << "){\n";
-      for(int i = 0; i < op -> getNumRegions();++i){
+      for(int i = 0; i <  (int)op-> getNumRegions();++i){
         auto &region = op -> getRegion(i);
-        if(i == op ->getNumRegions() - 1 ){
+        if(i == (int)op ->getNumRegions() - 1 ){
           outFile << "default:\n{\n";
         }else{
           outFile << "case " << i << ":\n{\n";
@@ -314,9 +314,9 @@ namespace{
           auto fType = attr.dyn_cast<TypeAttr>().getValue().dyn_cast<FunctionType>();
           resultType = typeConverter(fType.getResult(0));
           outFile << resultType << fName << "( ";
-          for(int i = 0;i < fType.getNumInputs(); ++i){
+          for(int i = 0;i <  (int)fType.getNumInputs(); ++i){
             outFile << typeConverter(fType.getInput(i)) << "arg" << i;
-            if(i != fType.getNumInputs() - 1)
+            if(i !=  (int)fType.getNumInputs() - 1)
               outFile << ", ";
 
 

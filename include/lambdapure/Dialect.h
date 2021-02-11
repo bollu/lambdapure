@@ -29,6 +29,8 @@ namespace mlir {
     public:
       /// Inherit some necessary constructors from 'TypeBase'.
       using Base::Base;
+      static ObjectType get(MLIRContext *context) { return Base::get(context); }
+
     };
 
   }//lambdapure

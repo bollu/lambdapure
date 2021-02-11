@@ -74,6 +74,7 @@ public:
   static bool classof(const ExprAST *c) { return c->getKind() == VarExpr; }
 };
 
+
 // AppAST -indirect function call
 class AppExprAST : public ExprAST{
   std::string FName;
@@ -221,7 +222,7 @@ public:
 
   void print();
   llvm::ArrayRef<std::unique_ptr<LetStmtAST>> getStmts(){return Stmts;}
-  RetStmtAST* getRet(){Ret.get();}
+  RetStmtAST* getRet(){return Ret.get();}
 };
 
 

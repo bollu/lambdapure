@@ -7,7 +7,7 @@ namespace lambdapure{
 
   void FBodyAST::print(){
     offset = offset + " ";
-    for(int i = 0; i < Stmts.size(); ++i){
+    for(int i = 0; i < (int)Stmts.size(); ++i){
       std::cout << offset;
       Stmts.at(i) -> print();
     }
@@ -18,7 +18,7 @@ namespace lambdapure{
   void ModuleAST::print(){
     std::cout << "-------------------AST-----------------------" << std::endl;
     std::cout << "---------------------------------------------" << std::endl <<std::endl;
-    for(int i = 0;i < FList.size();++i){
+    for(int i = 0;i < (int)FList.size();++i){
       FList.at(i) -> print();
     }
     std::cout <<  "--------------------------------------------" << std::endl;
@@ -26,7 +26,7 @@ namespace lambdapure{
 
   void FunctionAST::print(){
     std::cout<< offset << FName << " (" << stringOfType(ArgTypes,RetType) <<") ";
-    for(int i = 0; i < Args.size();++i){
+    for(int i = 0; i < (int)Args.size();++i){
       Args.at(i) -> print();
       std::cout << " ";
     }
@@ -56,7 +56,7 @@ namespace lambdapure{
   }
   void AppExprAST::print(){
     std::cout << "app " << FName ;
-    for(int i = 0; i < Args.size(); ++i){
+    for(int i = 0; i < (int)Args.size(); ++i){
       std::cout  << " ";
       Args.at(i) -> print();
     }
@@ -64,7 +64,7 @@ namespace lambdapure{
 
   void PapExprAST::print(){
     std::cout << "pap " << FName;
-    for(int i = 0; i < Args.size(); ++i){
+    for(int i = 0; i < (int)Args.size(); ++i){
       std::cout  << " ";
       Args.at(i) -> print();
     }
@@ -72,7 +72,7 @@ namespace lambdapure{
 
   void CallExprAST::print(){
     std::cout << "Call " << FName ;
-    for(int i = 0; i < Args.size(); ++i){
+    for(int i = 0; i < (int)Args.size(); ++i){
       std::cout  << " ";
       Args.at(i) -> print();
     }
@@ -81,7 +81,7 @@ namespace lambdapure{
 
   void CtorExprAST::print(){
     std::cout << "Ctor "<< Tag;
-    for(int i = 0; i < Args.size(); ++i){
+    for(int i = 0; i < (int)Args.size(); ++i){
       std::cout  << " ";
       Args.at(i) -> print();
     }
@@ -93,7 +93,7 @@ namespace lambdapure{
   void CaseStmtAST::print(){
     std::cout << offset <<  "Case  on " << getVar() << " : " << std::endl;
     offset = offset + " ";
-    for(int i = 0; i < Bodies.size(); ++i){
+    for(int i = 0; i < (int)Bodies.size(); ++i){
       Bodies.at(i) -> print();
       std::cout << std::endl;
     }

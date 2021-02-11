@@ -42,6 +42,8 @@ namespace {
         i++;
       }
       rewriter.replaceOp(op,alloc_ctor);
+      return success();
+
     }
   };
 
@@ -65,6 +67,7 @@ namespace {
         i++;
       }
       rewriter.replaceOp(op,alloc_ctor);
+      return success();
     }
   };
 }//end anonymous namespace

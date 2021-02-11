@@ -34,7 +34,7 @@ public:
   void runOnFunction() override {
     auto f = getFunction();
     std::vector<mlir::Value> args;
-    for(int i = 0; i <f.getNumArguments();++i ){
+    for(int i = 0; i < (int)f.getNumArguments();++i ){
       auto val = f.getArgument(i);
       auto type = val.getType();
       if(mlir::lambdapure::ObjectType::classof(type)){
@@ -51,8 +51,8 @@ public:
 
 
 void runOnRegion(std::vector<mlir::Value> cand,mlir::Region &region){
-    auto context = region.getContext();
-    auto builder = mlir::OpBuilder(context);
+    // auto context = region.getContext();
+    // auto builder = mlir::OpBuilder(context);
 
     for(auto op = region.op_begin(); op != region.op_end();++op){
       auto name = op  -> getName().getStringRef().str();
@@ -69,7 +69,7 @@ void runOnRegion(std::vector<mlir::Value> cand,mlir::Region &region){
         }
 
       }else if(name == "lambdapure.CaseOp"){
-        for(int i = 0 ; i < op ->getNumRegions();++i){
+        for(int i = 0 ; i < (int)op->getNumRegions();++i){
           std::vector<mlir::Value> new_cand(cand);
           auto &case_region = op -> getRegion(i);
           runOnRegion(new_cand,case_region);
@@ -126,7 +126,7 @@ void cleanAfterResetInsertion(mlir::Region &region){
       }
     }
     else if(name == "lambdapure.CaseOp"){
-      for(int i = 0 ; i < op ->getNumRegions();++i){
+      for(int i = 0 ; i < (int)op ->getNumRegions();++i){
         auto &case_region = op -> getRegion(i);
         cleanAfterResetInsertion(case_region);
       }
@@ -171,7 +171,7 @@ void insertReuseConstructor(mlir::Region &region){
     }
 
     else if(name == "lambdapure.CaseOp"){
-      for(int i = 0 ; i < op ->getNumRegions();++i){
+      for(int i = 0 ; i < (int)op ->getNumRegions();++i){
         auto &case_region = op -> getRegion(i);
         insertReuseConstructor(case_region);
       }
