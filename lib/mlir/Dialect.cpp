@@ -16,9 +16,7 @@ LambdapureDialect::LambdapureDialect(mlir::MLIRContext *ctxt)
                     ::mlir::TypeID::get<LambdapureDialect>()) {
   addOperations<
 #define GET_OP_LIST
-
 #include "lambdapure/Ops.cpp.inc"
-
       >();
   addTypes<ObjectType>();
 }

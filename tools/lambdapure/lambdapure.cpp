@@ -6,10 +6,8 @@
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Pass/PassManager.h"
-#include "mlir/Support/MlirOptMain.h"
 #include "mlir/Support/LogicalResult.h"
-
-
+#include "mlir/Support/MlirOptMain.h"
 
 #include "lambdapure/Dialect.h"
 #include "lambdapure/Lexer.h"
@@ -68,10 +66,6 @@ std::unique_ptr<ModuleAST> parseInputFile(llvm::StringRef inputFilename) {
 int main(int argc, char **argv) {
   cl::ParseCommandLineOptions(argc, argv);
   mlir::OwningModuleRef module;
-  mlir::DialectRegistry registry;
-  registerAllDialects(registry);
-  registry.insert<::mlir::lambdapure::LambdapureDialect>();
-  mlir::registerAllPasses();
 
   auto ast = parseInputFile(inputFilename);
   if (!ast) {
@@ -83,6 +77,10 @@ int main(int argc, char **argv) {
   }
 
   mlir::MLIRContext context;
+  context.loadDialect<::mlir::lambdapure::LambdapureDialect>();
+  // mlir::DialectRegistry registry;
+  // registerAllDialects(registry);
+  // registry.insert<::mlir::lambdapure::LambdapureDialect>();
 
   module = mlirGen(context, *ast);
   mlir::PassManager pm(&context);
@@ -90,26 +88,27 @@ int main(int argc, char **argv) {
     module->dump();
   }
 
-  if(desUpdates){
+
+  if (desUpdates) {
     pm.addPass(mlir::lambdapure::createDestructiveUpdatePattern());
   }
 
-  if(refCount ){
+  if (refCount) {
     pm.addPass(mlir::lambdapure::createReferenceRewriterPattern());
   }
 
-  if(runtimeLowering){
+  if (runtimeLowering) {
     pm.addPass(mlir::lambdapure::createLambdapureToLeanLowering());
   }
 
   mlir::LogicalResult runResult = pm.run(*module);
   assert(mlir::succeeded(runResult));
-  if(runtimeLowering){
+  if (runtimeLowering) {
     auto m = *module;
     lambdapure::translate(m);
   }
-  if(runtimeLowering || refCount || desUpdates)
-    module -> dump();
+  if (runtimeLowering || refCount || desUpdates)
+    module->dump();
 
   return 0;
 }
