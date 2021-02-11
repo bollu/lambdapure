@@ -20,7 +20,8 @@ endif()
 project(lambdapure LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard to conform to")
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-attributes -fsanitize=address -fsanitize=undefined")
+# set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-attributes -fsanitize=address -fsanitize=undefined")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Werror -Wno-attributes")
 
 find_package(MLIR REQUIRED CONFIG)
 
