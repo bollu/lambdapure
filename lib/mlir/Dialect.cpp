@@ -1,8 +1,8 @@
-#include "mlir/Support/LLVM.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Attributes.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/DialectImplementation.h"
+#include "mlir/IR/OpImplementation.h"
+#include "mlir/Support/LLVM.h"
 
 using namespace llvm;
 
@@ -11,16 +11,16 @@ using namespace llvm;
 using namespace mlir;
 using namespace mlir::lambdapure;
 
-LambdapureDialect::LambdapureDialect(mlir::MLIRContext *ctxt) : mlir::Dialect("lambdapure", ctxt,
-                                                                              ::mlir::TypeID::get<LambdapureDialect>()) {
+LambdapureDialect::LambdapureDialect(mlir::MLIRContext *ctxt)
+    : mlir::Dialect("lambdapure", ctxt,
+                    ::mlir::TypeID::get<LambdapureDialect>()) {
   addOperations<
 #define GET_OP_LIST
 
 #include "lambdapure/Ops.cpp.inc"
 
-  >();
+      >();
   addTypes<ObjectType>();
-
 }
 
 void LambdapureDialect::printType(mlir::Type type,
@@ -29,7 +29,8 @@ void LambdapureDialect::printType(mlir::Type type,
   printer << "Object";
 }
 
-void IntegerConstOp::build(mlir::OpBuilder &builder, mlir::OperationState &state, int value) {
+void IntegerConstOp::build(mlir::OpBuilder &builder,
+                           mlir::OperationState &state, int value) {
   state.addAttribute("value", builder.getI64IntegerAttr(value));
   mlir::MLIRContext *ctxt = builder.getContext();
   state.addTypes(ObjectType::get(ctxt));
@@ -43,17 +44,15 @@ void AppOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
   state.addTypes(ty);
 }
 
-
-void CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &state, llvm::StringRef fName,
-                   ArrayRef<Value> args, mlir::Type ty) {
+void CallOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
+                   llvm::StringRef fName, ArrayRef<Value> args, mlir::Type ty) {
   state.addAttribute("callee", builder.getSymbolRefAttr(fName));
   state.addOperands(args);
   state.addTypes(ty);
 }
 
-
-void PapOp::build(mlir::OpBuilder &builder, mlir::OperationState &state, llvm::StringRef fName,
-                  ArrayRef<Value> args) {
+void PapOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
+                  llvm::StringRef fName, ArrayRef<Value> args) {
   state.addAttribute("callee", builder.getSymbolRefAttr(fName));
   state.addOperands(args);
   state.addTypes(ObjectType::get(builder.getContext()));
@@ -74,15 +73,14 @@ void ProjectionOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
   state.addTypes(ty);
 }
 
-
-void ReuseConstructorOp::build(mlir::OpBuilder &builder, mlir::OperationState &state,
-                               int tag, ArrayRef<Value> operands) {
+void ReuseConstructorOp::build(mlir::OpBuilder &builder,
+                               mlir::OperationState &state, int tag,
+                               ArrayRef<Value> operands) {
   state.addAttribute("tag", builder.getI64IntegerAttr(tag));
   state.addOperands(operands);
 
   state.addTypes(ObjectType::get(builder.getContext()));
 }
-
 
 namespace mlir {
 
@@ -90,4 +88,4 @@ namespace mlir {
 
 #include "lambdapure/Ops.cpp.inc"
 
-}
+} // namespace mlir

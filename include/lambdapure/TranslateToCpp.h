@@ -3,9 +3,8 @@
 
 #include "mlir/IR/BuiltinOps.h"
 
-namespace lambdapure{
-   void translate(mlir::ModuleOp &module);
-}//end namespace
+namespace lambdapure {
+void translate(mlir::ModuleOp &module);
+} // namespace lambdapure
 
-
-#endif //LAMBDAPURE_TRANSLATE
+#endif // LAMBDAPURE_TRANSLATE

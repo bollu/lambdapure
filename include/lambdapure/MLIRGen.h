@@ -11,6 +11,6 @@ namespace lambdapure {
 class ModuleAST;
 mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST);
 // mlir::ModuleOp emptyModuleOp(mlir::MLIRContext &context);
-} // namespace lambdpure
+} // namespace lambdapure
 
 #endif // LAMBDAPURE_GEN

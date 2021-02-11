@@ -3,18 +3,18 @@
 #include "lambdapure/AST.h"
 #include "lambdapure/Dialect.h"
 #include "lambdapure/Scope.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Verifier.h"
-#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 
-#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/ScopedHashTable.h"
-#include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <numeric>
 
@@ -31,19 +31,19 @@ using llvm::SmallVector;
 using llvm::StringRef;
 using llvm::Twine;
 
-
 //
-namespace{
-class MLIRGenImpl{
+namespace {
+class MLIRGenImpl {
 public:
-MLIRGenImpl(mlir::MLIRContext &context) : builder(&context),lastLoc(builder.getUnknownLoc()){}
-  //converts lambdapure AST -> MLIR
-  mlir::ModuleOp mlirGen(ModuleAST &moduleAST){
+  MLIRGenImpl(mlir::MLIRContext &context)
+      : builder(&context), lastLoc(builder.getUnknownLoc()) {}
+  // converts lambdapure AST -> MLIR
+  mlir::ModuleOp mlirGen(ModuleAST &moduleAST) {
     theModule = mlir::ModuleOp::create(loc());
     auto funcs = moduleAST.getFList();
-    for(auto &funcAST : funcs){
+    for (auto &funcAST : funcs) {
       mlir::FuncOp func = mlirGen(*funcAST);
-      if(!func){
+      if (!func) {
         return nullptr;
       }
       theModule.push_back(func);
@@ -66,11 +66,8 @@ MLIRGenImpl(mlir::MLIRContext &context) : builder(&context),lastLoc(builder.getU
     return theModule;
   }
 
-
-
-  mlir::ModuleOp emptyModuleOp(){
+  mlir::ModuleOp emptyModuleOp() {
     return mlir::ModuleOp::create(builder.getUnknownLoc());
-
   }
 
 private:
@@ -80,72 +77,67 @@ private:
   lambdapure::ScopeTable scopeTable = lambdapure::ScopeTable();
   mlir::Location lastLoc;
   mlir::Block lastBlock;
-  mlir::Location loc(){return lastLoc;}
+  mlir::Location loc() { return lastLoc; }
 
-  mlir::Location loc(Location loc){
+  mlir::Location loc(Location loc) {
     auto mlirLoc = builder.getFileLineColLoc(builder.getIdentifier(*loc.file),
-                                     loc.line, loc.col);
+                                             loc.line, loc.col);
     lastLoc = mlirLoc;
     return mlirLoc;
   }
 
-  mlir::Type typeGen(VarType t){
-    switch (t){
-      case object:
-        return ObjectType::get(builder.getContext());
-      case u8:
-        return builder.getIntegerType(8);
-      default:
-        return builder.getIntegerType(64);
+  mlir::Type typeGen(VarType t) {
+    switch (t) {
+    case object:
+      return ObjectType::get(builder.getContext());
+    case u8:
+      return builder.getIntegerType(8);
+    default:
+      return builder.getIntegerType(64);
     }
-
   }
 
-
-
-  mlir::FuncOp mlirGen(FunctionAST &functionAST){
-    //create scope
+  mlir::FuncOp mlirGen(FunctionAST &functionAST) {
+    // create scope
     scopeTable.scope();
     ScopedHashTableScope<StringRef, mlir::Value> var_scope(symbolTable);
     // setup type
     std::vector<mlir::Type> inputs;
-    for(VarType t : functionAST.getArgTypes()){
+    for (VarType t : functionAST.getArgTypes()) {
       inputs.push_back(typeGen(t));
-
     }
     mlir::Type retTy;
     auto FName = functionAST.getName();
-    auto func_type = builder.getFunctionType(inputs,typeGen(functionAST.getRetType()));
+    auto func_type =
+        builder.getFunctionType(inputs, typeGen(functionAST.getRetType()));
     // if(FName.compare("main") == 0){
     //   FName = "main";
-    //   // if(inputs.size() > 0 ) {assert(false && "Invalid function main_, no input types allowed");}
-    //   func_type = builder.getFunctionType(inputs,llvm::None);
+    //   // if(inputs.size() > 0 ) {assert(false && "Invalid function main_, no
+    //   input types allowed");} func_type =
+    //   builder.getFunctionType(inputs,llvm::None);
     // }
 
-
-
-
-    //setup loc,name,type
+    // setup loc,name,type
     //--------------------------------------------------------
-    mlir::FuncOp function = mlir::FuncOp::create(loc(functionAST.getLoc()), FName, func_type);
+    mlir::FuncOp function =
+        mlir::FuncOp::create(loc(functionAST.getLoc()), FName, func_type);
     mlir::Block &entryBlock = *function.addEntryBlock();
 
-    for(unsigned i = 0; i < functionAST.getArgs().size();++i){
-      if(failed(scopeTable.declare(
-        functionAST.getArgs().begin()[i] -> getName(),
-        entryBlock.getArguments().begin()[i],
-        typeGen(functionAST.getArgTypes().begin()[i])
-      ))){return nullptr;}
+    for (unsigned i = 0; i < functionAST.getArgs().size(); ++i) {
+      if (failed(scopeTable.declare(
+              functionAST.getArgs().begin()[i]->getName(),
+              entryBlock.getArguments().begin()[i],
+              typeGen(functionAST.getArgTypes().begin()[i])))) {
+        return nullptr;
+      }
     }
     //
     builder.setInsertionPointToStart(&entryBlock);
     // auto region = function.getCallableRegion();
     mlirGen(*functionAST.getFBody());
 
-
-
     //--------------------------------------------------------
-    //experimenting
+    // experimenting
     // ReturnOp returnOp;
     // builder.create<ReturnOp>(loc());
     //===============
@@ -154,167 +146,150 @@ private:
     return function;
   }
 
-
-
-mlir::LogicalResult mlirGen(DirectRetStmtAST &direct){
-  llvm::StringRef var = direct.getVar();
-  mlir::Value result = scopeTable.lookup(var);
-  builder.create<ReturnOp>(loc(),result);
-  // if(!result){
-  //   builder.create<ReturnOp>(loc());
-  //
-  // }
-  // else {
-  //   builder.create<ReturnOp>(loc(),result);
-  // }
-  return mlir::success();
-}
-
-mlir::LogicalResult mlirGen(CaseStmtAST &casestmt){
-  llvm::StringRef var = casestmt.getVar();
-  mlir::Value curr_val = scopeTable.lookup(var);
-  auto bodies = casestmt.getBodies();
-  mlir::Type t  = curr_val.getType();
-  if(t.isa<ObjectType>()){
-    curr_val = builder.create<TagGetOp>(loc(), builder.getIntegerType(8),curr_val);
+  mlir::LogicalResult mlirGen(DirectRetStmtAST &direct) {
+    llvm::StringRef var = direct.getVar();
+    mlir::Value result = scopeTable.lookup(var);
+    builder.create<ReturnOp>(loc(), result);
+    // if(!result){
+    //   builder.create<ReturnOp>(loc());
+    //
+    // }
+    // else {
+    //   builder.create<ReturnOp>(loc(),result);
+    // }
+    return mlir::success();
   }
-  auto caseOp = builder.create<CaseOp>(loc(),curr_val,bodies.size());
-  int i = 0;
-  for(auto &body : bodies){
-    auto &region = caseOp.getRegion(i);
-    auto block = builder.createBlock(&region);
-    builder.setInsertionPointToStart(block);
-    mlirGen(*body);
-    ++i;
+
+  mlir::LogicalResult mlirGen(CaseStmtAST &casestmt) {
+    llvm::StringRef var = casestmt.getVar();
+    mlir::Value curr_val = scopeTable.lookup(var);
+    auto bodies = casestmt.getBodies();
+    mlir::Type t = curr_val.getType();
+    if (t.isa<ObjectType>()) {
+      curr_val =
+          builder.create<TagGetOp>(loc(), builder.getIntegerType(8), curr_val);
+    }
+    auto caseOp = builder.create<CaseOp>(loc(), curr_val, bodies.size());
+    int i = 0;
+    for (auto &body : bodies) {
+      auto &region = caseOp.getRegion(i);
+      auto block = builder.createBlock(&region);
+      builder.setInsertionPointToStart(block);
+      mlirGen(*body);
+      ++i;
+    }
+    return mlir::success();
   }
-  return mlir::success();
-}
 
-mlir::LogicalResult mlirGen(RetStmtAST &ret){
-  switch(ret.getKind()){
-      case lambdapure::RetStmtAST::Direct:
-        return mlirGen(cast<DirectRetStmtAST>(ret));
-      case lambdapure::RetStmtAST::Case:
-        return  mlirGen(cast<CaseStmtAST>(ret));
-      default:
-        return mlir::failure();
-  }
-}
-
-
-mlir::Value mlirGen(NumberExprAST &expr){
-  return builder.create<IntegerConstOp>(loc(),expr.getValue());
-}
-
-mlir::Value mlirGen(VariableExprAST &expr){
-  return scopeTable.lookup(expr.getName());
-}
-
-mlir::Value mlirGen(AppExprAST &expr,mlir::Type ty){
-  std::vector<mlir::Value> args = std::vector<mlir::Value>();
-
-  mlir::Value funcVal = scopeTable.lookup(expr.getFName());
-  for(auto &varExpr : expr.getArgs()){
-    args.push_back(mlirGen(*varExpr));
-  }
-  return builder.create<AppOp>(loc(),funcVal,args,ty);
-}
-
-
-mlir::Value mlirGen(CallExprAST &expr,mlir::Type ty){
-  std::vector<mlir::Value> args = std::vector<mlir::Value>();
-  for(auto &varExpr : expr.getArgs()){
-    args.push_back(mlirGen(*varExpr));
-  }
-  std::string fName = expr.getFName();
-  std::vector<mlir::Type> results;
-  results.push_back(ty);
-  return builder.create<CallOp>(loc(),fName,args,ty);
-
-}
-
-mlir::Value mlirGen(PapExprAST &expr,mlir::Type ty){
-  std::vector<mlir::Value> args = std::vector<mlir::Value>();
-  for(auto &varExpr : expr.getArgs()){
-    args.push_back(mlirGen(*varExpr));
-  }
-  std::string fName = expr.getFName();
-  return builder.create<PapOp>(loc(),fName,args);
-}
-
-
-mlir::Value mlirGen(ProjExprAST &expr, mlir::Type ty){
-  auto varExpr = expr.getVar();
-  return builder.create<ProjectionOp>(loc(),expr.getIndex(),mlirGen(*varExpr),ty);
-}
-
-mlir::Value mlirGen(CtorExprAST &expr, mlir::Type ty){
-  std::vector<mlir::Value> args = std::vector<mlir::Value>();
-  for(auto &varExpr : expr.getArgs()){
-    args.push_back(mlirGen(*varExpr));
-  }
-  return builder.create<ConstructorOp>(loc(),expr.getTag(),args,ty);
-  // return nullptr;
-}
-
-
-mlir::Value mlirGen(ExprAST &expr,mlir::Type ty){
-
-  switch(expr.getKind()){
-    case lambdapure::ExprAST::NumberExpr:
-        return mlirGen(cast<NumberExprAST>(expr));
-    case lambdapure::ExprAST::VarExpr:
-        return mlirGen(cast<VariableExprAST>(expr));
-    case lambdapure::ExprAST::AppExpr:
-        return mlirGen(cast<AppExprAST>(expr),ty);
-    case lambdapure::ExprAST::CallExpr:
-        return mlirGen(cast<CallExprAST>(expr),ty);
-    case lambdapure::ExprAST::CtorExpr:
-        return mlirGen(cast<CtorExprAST>(expr),ty);
-    case lambdapure::ExprAST::ProjExpr:
-        return mlirGen(cast<ProjExprAST>(expr),ty);
-    case lambdapure::ExprAST::PapExpr:
-        return mlirGen(cast<PapExprAST>(expr),ty);
+  mlir::LogicalResult mlirGen(RetStmtAST &ret) {
+    switch (ret.getKind()) {
+    case lambdapure::RetStmtAST::Direct:
+      return mlirGen(cast<DirectRetStmtAST>(ret));
+    case lambdapure::RetStmtAST::Case:
+      return mlirGen(cast<CaseStmtAST>(ret));
     default:
-      std::cout << "Invalid expression found in lambdapure AST" << std::endl;
-      return nullptr;
-  }
-
-}
-
-
-mlir::LogicalResult mlirGen(FBodyAST &fBodyAST){
-  for(const std::unique_ptr<LetStmtAST> &letstmt :fBodyAST.getStmts()){
-    auto expr = letstmt -> getExpr();
-    mlir::Type ty = typeGen(letstmt -> getVtype());
-    mlir::Value value = mlirGen(*expr,ty);
-    if(failed(scopeTable.declare(
-                  letstmt -> getName(),
-                  value,
-                  ty
-       ))){
-      std::cout << "Failed to declare variable in let stament" << std::endl;
       return mlir::failure();
     }
   }
-  auto ret = mlirGen(*fBodyAST.getRet());
-  return ret;
-}
 
+  mlir::Value mlirGen(NumberExprAST &expr) {
+    return builder.create<IntegerConstOp>(loc(), expr.getValue());
+  }
 
+  mlir::Value mlirGen(VariableExprAST &expr) {
+    return scopeTable.lookup(expr.getName());
+  }
 
+  mlir::Value mlirGen(AppExprAST &expr, mlir::Type ty) {
+    std::vector<mlir::Value> args = std::vector<mlir::Value>();
 
-
-
-
-};
-}//namespace
-
-namespace lambdapure{
-  // mlir::ModuleOp emptyModuleOp(mlir::MLIRContext &context){
-  //   return MLIRGenImpl(context).emptyModuleOp();
-  // }
-  mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST){
-      return MLIRGenImpl(context).mlirGen(moduleAST);
+    mlir::Value funcVal = scopeTable.lookup(expr.getFName());
+    for (auto &varExpr : expr.getArgs()) {
+      args.push_back(mlirGen(*varExpr));
     }
-}//namespace lambdapure
+    return builder.create<AppOp>(loc(), funcVal, args, ty);
+  }
+
+  mlir::Value mlirGen(CallExprAST &expr, mlir::Type ty) {
+    std::vector<mlir::Value> args = std::vector<mlir::Value>();
+    for (auto &varExpr : expr.getArgs()) {
+      args.push_back(mlirGen(*varExpr));
+    }
+    std::string fName = expr.getFName();
+    std::vector<mlir::Type> results;
+    results.push_back(ty);
+    return builder.create<CallOp>(loc(), fName, args, ty);
+  }
+
+  mlir::Value mlirGen(PapExprAST &expr, mlir::Type ty) {
+    std::vector<mlir::Value> args = std::vector<mlir::Value>();
+    for (auto &varExpr : expr.getArgs()) {
+      args.push_back(mlirGen(*varExpr));
+    }
+    std::string fName = expr.getFName();
+    return builder.create<PapOp>(loc(), fName, args);
+  }
+
+  mlir::Value mlirGen(ProjExprAST &expr, mlir::Type ty) {
+    auto varExpr = expr.getVar();
+    return builder.create<ProjectionOp>(loc(), expr.getIndex(),
+                                        mlirGen(*varExpr), ty);
+  }
+
+  mlir::Value mlirGen(CtorExprAST &expr, mlir::Type ty) {
+    std::vector<mlir::Value> args = std::vector<mlir::Value>();
+    for (auto &varExpr : expr.getArgs()) {
+      args.push_back(mlirGen(*varExpr));
+    }
+    return builder.create<ConstructorOp>(loc(), expr.getTag(), args, ty);
+    // return nullptr;
+  }
+
+  mlir::Value mlirGen(ExprAST &expr, mlir::Type ty) {
+
+    switch (expr.getKind()) {
+    case lambdapure::ExprAST::NumberExpr:
+      return mlirGen(cast<NumberExprAST>(expr));
+    case lambdapure::ExprAST::VarExpr:
+      return mlirGen(cast<VariableExprAST>(expr));
+    case lambdapure::ExprAST::AppExpr:
+      return mlirGen(cast<AppExprAST>(expr), ty);
+    case lambdapure::ExprAST::CallExpr:
+      return mlirGen(cast<CallExprAST>(expr), ty);
+    case lambdapure::ExprAST::CtorExpr:
+      return mlirGen(cast<CtorExprAST>(expr), ty);
+    case lambdapure::ExprAST::ProjExpr:
+      return mlirGen(cast<ProjExprAST>(expr), ty);
+    case lambdapure::ExprAST::PapExpr:
+      return mlirGen(cast<PapExprAST>(expr), ty);
+    default:
+      std::cout << "Invalid expression found in lambdapure AST" << std::endl;
+      return nullptr;
+    }
+  }
+
+  mlir::LogicalResult mlirGen(FBodyAST &fBodyAST) {
+    for (const std::unique_ptr<LetStmtAST> &letstmt : fBodyAST.getStmts()) {
+      auto expr = letstmt->getExpr();
+      mlir::Type ty = typeGen(letstmt->getVtype());
+      mlir::Value value = mlirGen(*expr, ty);
+      if (failed(scopeTable.declare(letstmt->getName(), value, ty))) {
+        std::cout << "Failed to declare variable in let stament" << std::endl;
+        return mlir::failure();
+      }
+    }
+    auto ret = mlirGen(*fBodyAST.getRet());
+    return ret;
+  }
+};
+} // namespace
+
+namespace lambdapure {
+// mlir::ModuleOp emptyModuleOp(mlir::MLIRContext &context){
+//   return MLIRGenImpl(context).emptyModuleOp();
+// }
+mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
+                              ModuleAST &moduleAST) {
+  return MLIRGenImpl(context).mlirGen(moduleAST);
+}
+} // namespace lambdapure
