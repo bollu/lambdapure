@@ -16,6 +16,20 @@
 #include "lambdapure/Passes.h"
 #include "lambdapure/TranslateToCpp.h"
 
+#include "mlir/IR/AsmState.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Verifier.h"
+#include "mlir/Parser.h"
+#include "mlir/Pass/Pass.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Transforms/Passes.h"
+
+#include "llvm/Support/ErrorOr.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/raw_ostream.h"
+
 using namespace lambdapure;
 namespace cl = llvm::cl;
 
@@ -63,7 +77,64 @@ std::unique_ptr<ModuleAST> parseInputFile(llvm::StringRef inputFilename) {
   return parser.parse();
 }
 
+int roundTripMain(int argc, char **argv) {
+  mlir::registerAsmPrinterCLOptions();
+  mlir::registerMLIRContextCLOptions();
+  mlir::registerPassManagerCLOptions();
+
+
+  cl::ParseCommandLineOptions(argc, argv);
+
+  mlir::OwningModuleRef module;
+  mlir::MLIRContext context;
+  context.getOrLoadDialect<::mlir::lambdapure::LambdapureDialect>();
+  context.getOrLoadDialect<::mlir::StandardOpsDialect>();
+
+  llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> fileOrErr =
+      llvm::MemoryBuffer::getFileOrSTDIN(inputFilename);
+  if (std::error_code EC = fileOrErr.getError()) {
+    llvm::errs() << "Could not open input file: " << EC.message() << "\n";
+    return -1;
+  }
+
+  llvm::SourceMgr sourceMgr;
+  mlir::SourceMgrDiagnosticHandler sourceMgrHandler(sourceMgr, &context);
+  // Parse the input mlir.
+  sourceMgr.AddNewSourceBuffer(std::move(*fileOrErr), llvm::SMLoc());
+  module = mlir::parseSourceFile(sourceMgr, &context);
+  if (!module) {
+    llvm::errs() << "Error can't load file " << inputFilename << "\n";
+    return 3;
+  }
+
+  mlir::PassManager pm(&context);
+  if (dumpMLIR) {
+    module->dump();
+  }
+
+  if (desUpdates) {
+	  pm.addNestedPass<mlir::FuncOp>(mlir::lambdapure::createDestructiveUpdatePattern());
+  }
+  // pm.addPass(mlir::lambdapure::createDestructiveUpdatePattern());
+  // pm.addPass(mlir::lambdapure::createReferenceRewriterPattern());
+  // pm.addPass(mlir::lambdapure::createLambdapureToLeanLowering());
+
+  mlir::LogicalResult runResult = pm.run(*module);
+  assert(mlir::succeeded(runResult));
+  module->dump();
+
+  // if (runtimeLowering) {
+  //   auto m = *module;
+  //   lambdapure::translate(m);
+  // }
+  // module->dump();
+
+  return 0;
+}
+
 int main(int argc, char **argv) {
+  return roundTripMain(argc, argv);
+
   cl::ParseCommandLineOptions(argc, argv);
   mlir::OwningModuleRef module;
 
@@ -77,7 +148,8 @@ int main(int argc, char **argv) {
   }
 
   mlir::MLIRContext context;
-  context.loadDialect<::mlir::lambdapure::LambdapureDialect>();
+  context.getOrLoadDialect<::mlir::lambdapure::LambdapureDialect>();
+  context.getOrLoadDialect<::mlir::StandardOpsDialect>();
   // mlir::DialectRegistry registry;
   // registerAllDialects(registry);
   // registry.insert<::mlir::lambdapure::LambdapureDialect>();

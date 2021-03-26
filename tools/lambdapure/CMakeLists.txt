@@ -14,7 +14,6 @@ set(LIBS
         MLIRPass
         MLIRSideEffectInterfaces
         MLIRSupport
-        MLIRTargetLLVMIR
         MLIRTransforms
         )
 

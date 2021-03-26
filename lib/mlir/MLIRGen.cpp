@@ -80,10 +80,10 @@ private:
   mlir::Location loc() { return lastLoc; }
 
   mlir::Location loc(Location loc) {
-    auto mlirLoc = builder.getFileLineColLoc(builder.getIdentifier(*loc.file),
-                                             loc.line, loc.col);
-    lastLoc = mlirLoc;
-    return mlirLoc;
+    // auto mlirLoc = builder.getFileLineColLoc(builder.getIdentifier(*loc.file),
+    //                                          loc.line, loc.col);
+    // lastLoc = mlirLoc;
+    return builder.getUnknownLoc();
   }
 
   mlir::Type typeGen(VarType t) {
