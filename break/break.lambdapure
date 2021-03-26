@@ -1,5 +1,4 @@
 def crash(p: obj) : obj :=
   let x_1 : obj := ctor_0[Tree.Nil];
   let p_1 : obj := proj[4] p;
-  let x_2 : obj := ctor_2[Tree.Cons] x_1 p_1;
-  ret x_2
+  ret p_1
