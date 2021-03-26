@@ -40,10 +40,15 @@ public:
         args.push_back(val);
       }
     }
+	llvm::errs() << "TopLevel runOnRegion...\n"; llvm::errs().flush();
     runOnRegion(args, f.getBody());
+    llvm::errs() << "Done!\nCleanAfterResetInsertion.."; llvm::errs().flush();
     cleanAfterResetInsertion(f.getBody());
+    llvm::errs() << "Done!\nInsertReuseConstructor.."; llvm::errs().flush();
     insertReuseConstructor(f.getBody());
+    llvm::errs() << "Done!\nCleanAfterReuseInsertion"; llvm::errs().flush();
     cleanAfterReuseInsertion(f);
+    llvm::errs() << "Done!\n"; llvm::errs().flush();
   }
 
   void runOnRegion(std::vector<mlir::Value> cand, mlir::Region &region) {
@@ -76,6 +81,7 @@ public:
   }
 
   void insertReuse(mlir::Value reuseVal, Region &region) {
+	llvm::errs() << "insertReuse (really insertReset)...\n";
 
     BlockAndValueMapping mapper;
     auto context = region.getContext();
@@ -87,10 +93,10 @@ public:
 
     auto &new_region_1 = resetOp->getRegion(0);
     region.cloneInto(&new_region_1, mapper);
-    new_region_1.op_begin()->erase();
+    new_region_1.op_begin()->erase(); // wut?
     auto &new_region_2 = resetOp->getRegion(1);
     region.cloneInto(&new_region_2, mapper);
-    new_region_2.op_begin()->erase();
+    new_region_2.op_begin()->erase(); // wut?
   }
 
   int getCandidateSize(mlir::Value candidate, Region &region) {
@@ -128,18 +134,22 @@ public:
         }
       }
     }
+    llvm::errs() << " Done!\n"; llvm::errs().flush();
   }
 
   void cleanAfterReuseInsertion(mlir::FuncOp f) {
     f.walk([&](mlir::Operation *op) {
       if (op->getName().getStringRef().str() == "lambdapure.ConstructorOp" &&
           op->use_empty()) {
+	    llvm::errs() << "Cleaning after reuse. deleting " << op << ".\n";
         op->erase();
       }
     });
+	llvm::errs() << "Cleaning after reuse done.\n";
   }
 
   void insertReuseConstructor(mlir::Region &region) {
+	llvm::errs() << "Inserting ReuseConstructor...\n";
     auto builder = mlir::OpBuilder(region.getContext());
     for (auto op = region.op_begin(); op != region.op_end(); ++op) {
       auto name = op->getName().getStringRef().str();
