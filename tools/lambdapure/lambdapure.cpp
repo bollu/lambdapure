@@ -46,7 +46,7 @@ static cl::opt<std::string> outputFilename("o", cl::init("a"),
 
 static cl::opt<bool> dumpAST("ast", cl::desc("AST dump"), cl::init(false));
 
-static cl::opt<bool> dumpMLIR("mlir", cl::desc("MLIR dump"), cl::init(false));
+static cl::opt<bool> dumpMLIR("mlir", cl::desc("MLIR dump"), cl::init(true));
 
 static cl::opt<bool> runtimeLowering("runtime", cl::desc("Runtime dump"),
                                      cl::init(false));
@@ -82,7 +82,6 @@ int roundTripMain(int argc, char **argv) {
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
 
-
   cl::ParseCommandLineOptions(argc, argv);
 
   mlir::OwningModuleRef module;
@@ -97,23 +96,38 @@ int roundTripMain(int argc, char **argv) {
     return -1;
   }
 
-  llvm::SourceMgr sourceMgr;
-  mlir::SourceMgrDiagnosticHandler sourceMgrHandler(sourceMgr, &context);
-  // Parse the input mlir.
-  sourceMgr.AddNewSourceBuffer(std::move(*fileOrErr), llvm::SMLoc());
-  module = mlir::parseSourceFile(sourceMgr, &context);
-  if (!module) {
-    llvm::errs() << "Error can't load file " << inputFilename << "\n";
-    return 3;
+  if (llvm::StringRef(inputFilename).endswith(".lambdapure")) {
+    llvm::StringRef buffer = fileOrErr.get()->getBuffer();
+    std::string filename = llvm::StringRef(inputFilename).str();
+    Lexer lexer = Lexer(filename, buffer);
+    Parser parser = Parser(lexer);
+    std::unique_ptr<ModuleAST> ast = parser.parse();
+    module = mlirGen(context, *ast);
+
+  } else {
+    /// assert(inputFilename.endswith(".mlir") &&
+    //       "expected either .lambdapure or .mlir files");
+    llvm::SourceMgr sourceMgr;
+    mlir::SourceMgrDiagnosticHandler sourceMgrHandler(sourceMgr, &context);
+    // Parse the input mlir.
+    sourceMgr.AddNewSourceBuffer(std::move(*fileOrErr), llvm::SMLoc());
+    module = mlir::parseSourceFile(sourceMgr, &context);
+    if (!module) {
+      llvm::errs() << "Error can't load file " << inputFilename << "\n";
+      return 3;
+    }
   }
 
   mlir::PassManager pm(&context);
   if (dumpMLIR) {
+    llvm::errs() << "vvvMLIR (initial)vvv\n";
     module->dump();
+    llvm::errs() << "^^^MLIR (initial)^^^\n";
   }
 
   if (desUpdates) {
-	  pm.addNestedPass<mlir::FuncOp>(mlir::lambdapure::createDestructiveUpdatePattern());
+    pm.addNestedPass<mlir::FuncOp>(
+        mlir::lambdapure::createDestructiveUpdatePattern());
   }
   // pm.addPass(mlir::lambdapure::createDestructiveUpdatePattern());
   // pm.addPass(mlir::lambdapure::createReferenceRewriterPattern());
@@ -121,6 +135,8 @@ int roundTripMain(int argc, char **argv) {
 
   mlir::LogicalResult runResult = pm.run(*module);
   assert(mlir::succeeded(runResult));
+
+  llvm::errs() << "vvvMLIR (final)vvv\n";
   module->dump();
 
   // if (runtimeLowering) {
@@ -159,7 +175,6 @@ int main(int argc, char **argv) {
   if (dumpMLIR) {
     module->dump();
   }
-
 
   if (desUpdates) {
     pm.addPass(mlir::lambdapure::createDestructiveUpdatePattern());

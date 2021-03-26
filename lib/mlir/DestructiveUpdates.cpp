@@ -58,6 +58,7 @@ public:
         for (auto candidate : cand) {
           if (checkControlPath(candidate, &*op)) {
             int cand_size = getCandidateSize(candidate, region);
+			llvm::errs() << "@ cand " << candidate << ". op " << *op << ". constsz " << const_size << " <=? " << " cand_size " << cand_size << "\n";
             if (const_size <= cand_size) {
               insertReuse(candidate, region);
             }
