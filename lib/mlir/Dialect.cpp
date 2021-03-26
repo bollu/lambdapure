@@ -27,6 +27,13 @@ void LambdapureDialect::printType(mlir::Type type,
   printer << "Object";
 }
 
+mlir::Type LambdapureDialect::parseType(mlir::DialectAsmParser &parser) const {
+	if(succeeded(parser.parseOptionalKeyword("Object"))) {
+		return ObjectType::get(parser.getBuilder().getContext());
+	}
+	assert(false && "unknown type");
+}
+
 void IntegerConstOp::build(mlir::OpBuilder &builder,
                            mlir::OperationState &state, int value) {
   state.addAttribute("value", builder.getI64IntegerAttr(value));
