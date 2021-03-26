@@ -1,0 +1,5 @@
+def crash(p: obj) : obj :=
+  let x_1 : obj := ctor_0[Tree.Nil];
+  let p_1 : obj := proj[4] p;
+  let y_1 : obj := crash x_1;
+  ret y_1
